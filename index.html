@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件处理工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #4a90e2;
+        }
+        p {
+            text-align: center;
+            font-size: 18px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        input[type="file"] {
+            display: block;
+            margin: 20px auto;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            cursor: pointer;
+        }
+        input[type="file"]:hover {
+            border-color: #4a90e2;
+        }
+        #output {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #output a {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4a90e2;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        #output a:hover {
+            background-color: #357ab8;
+        }
+        #preview {
+            margin-top: 20px;
+            text-align: center;
+        }
+        img, video {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        #error { color: red; margin-top: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>文件处理工具</h1>
+        <p>上传一个文件，我们将对其前100字节进行逆序处理。</p>
+        <input type="file" id="fileInput">
+        <div id="error"></div>
+        <div id="output"></div>
+        <div id="preview"></div>
+    </div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            // 清空之前的输出内容
+            document.getElementById('output').innerHTML = '';
+            document.getElementById('preview').innerHTML = '';
+            document.getElementById('error').innerHTML = '';
+    
+            const file = event.target.files[0];
+            if (file) {
+                if (file.size < 100) {
+                    document.getElementById('error').innerHTML = '文件大小不足100字节，无法进行处理。';
+                    return;
+                }
+    
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const arrayBuffer = e.target.result;
+                    const uint8Array = new Uint8Array(arrayBuffer);
+                    const first100Bytes = uint8Array.slice(0, 100);
+                    const reversedBytes = first100Bytes.reverse();
+    
+                    const modifiedArrayBuffer = new ArrayBuffer(file.size);
+                    const modifiedUint8Array = new Uint8Array(modifiedArrayBuffer);
+                    modifiedUint8Array.set(reversedBytes);
+                    modifiedUint8Array.set(uint8Array.slice(100), 100);
+    
+                    const blob = new Blob([modifiedArrayBuffer], { type: file.type });
+                    const url = URL.createObjectURL(blob);
+    
+                    const outputDiv = document.getElementById('output');
+                    outputDiv.innerHTML = `
+                        <p>处理完成！你可以下载修改后的文件：</p>
+                        <a href="${url}" download="${file.name}">下载文件</a>
+                    `;
+    
+                    const previewDiv = document.getElementById('preview');
+                    previewDiv.innerHTML = '';
+    
+                    if (file.type.startsWith('image/')) {
+                        const img = document.createElement('img');
+                        img.src = url;
+                        previewDiv.appendChild(img);
+                    } else if (file.type.startsWith('video/')) {
+                        const video = document.createElement('video');
+                        video.src = url;
+                        video.controls = true;
+                        previewDiv.appendChild(video);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        });
+    </script>
+</body>
+</html>
