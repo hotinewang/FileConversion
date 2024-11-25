@@ -67,7 +67,12 @@
             border-radius: 4px;
             margin-top: 10px;
         }
-        #error { color: red; margin-top: 20px; text-align: center; }
+        #error, #previewError {
+            color: red;
+            margin-top: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -121,16 +126,32 @@
                     if (file.type.startsWith('image/')) {
                         const img = document.createElement('img');
                         img.src = url;
-                        previewDiv.appendChild(img);
+                        img.onerror = function() {
+                            previewDiv.innerHTML = '<p id="previewError">图片无法预览。</p>';
+                        };
+                        img.onload = function() {
+                            previewDiv.appendChild(img);
+                        };
                     } else if (file.type.startsWith('video/')) {
                         const video = document.createElement('video');
                         video.src = url;
                         video.controls = true;
-                        previewDiv.appendChild(video);
+                        video.onerror = function() {
+                            previewDiv.innerHTML = '<p id="previewError">视频无法预览。</p>';
+                        };
+                        video.onloadeddata = function() {
+                            previewDiv.appendChild(video);
+                        };
                     }
                 };
                 reader.readAsArrayBuffer(file);
             }
+        });
+
+        document.getElementById('fileInput').addEventListener('click', function() {
+            document.getElementById('output').innerHTML = '';
+            document.getElementById('preview').innerHTML = '';
+            document.getElementById('error').innerHTML = '';
         });
     </script>
 </body>
