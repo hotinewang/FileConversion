@@ -15,42 +15,68 @@ const rl = readline.createInterface({
     output: process.stdout
 });
 
-rl.question('输入要批处理的文件所在的【文件夹】路径: ', (folderPath) => {
-    rl.close();
+function promptForFolderPath() {
+    rl.question('请输入要处理的文件夹路径: ', (folderPath) => {
+        // 检查文件夹是否存在
+        if (!fs.existsSync(folderPath) || !fs.statSync(folderPath).isDirectory()) {
+            console.log(`文件夹 ${folderPath} 不存在或不是目录。请重试。`);
+            promptForFolderPath();
+        } else {
+            processFolder(folderPath);
+        }
+    });
+}
 
-    // 检查文件夹是否存在
-    if (!fs.existsSync(folderPath)) {
-        console.log(`文件夹 ${folderPath} 不存在！退出。`);
-        process.exit(1);
-    }
+promptForFolderPath();
 
+function processFolder(folderPath) {
     // 读取文件夹中的所有文件
     fs.readdir(folderPath, (err, files) => {
         if (err) {
-            console.error('读取路径出错：:', err);
+            console.error('读取目录时出错:', err);
+            promptForFolderPath();
             return;
         }
+
+        let processedCount = 0;
+        const totalFiles = files.length;
 
         files.forEach(file => {
             const filePath = path.join(folderPath, file);
 
             // 检查是否为文件
             if (fs.statSync(filePath).isFile()) {
-                processFile(filePath);
+                processFile(filePath, () => {
+                    processedCount++;
+                    if (processedCount === totalFiles) {
+                        promptToExit();
+                    }
+                });
+            } else {
+                processedCount++;
+                if (processedCount === totalFiles) {
+                    promptToExit();
+                }
             }
         });
-    });
-});
 
-function processFile(filePath) {
+        if (totalFiles === 0) {
+            promptToExit();
+        }
+    });
+}
+
+function processFile(filePath, callback) {
     fs.readFile(filePath, (err, data) => {
         if (err) {
-            console.error(`读取文件出错 ${filePath}:`, err);
+            console.error(`读取文件 ${filePath} 时出错:`, err);
+            callback();
             return;
         }
 
         if (data.length < 100) {
-            console.log(`【提示】文件 ${filePath} 太小，无法处理，已跳过。`);
+            console.log(`【提示】文件 ${filePath} 太小无法处理！`);
+            callback();
             return;
         }
 
@@ -61,11 +87,25 @@ function processFile(filePath) {
 
         fs.writeFile(filePath, modifiedData, (err) => {
             if (err) {
-                console.error(`写入文件出错 ${filePath}:`, err);
+                console.error(`写入文件 ${filePath} 时出错:`, err);
+                callback();
                 return;
             }
 
-            console.log(`已处理文件： ${filePath}`);
+            console.log(`已处理并保存文件: ${filePath}`);
+            callback();
         });
+    });
+}
+
+function promptToExit() {
+    const rlExit = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    rlExit.question('按任意键退出程序...', () => {
+        rlExit.close();
+        process.exit(0);
     });
 }
