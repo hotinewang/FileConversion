@@ -1,3 +1,7 @@
+/**
+ * FileNameConverter可以将指定目录中的全部文件名称中的IMG_、VID_、mmexport字符去掉。\n如果使用脚本所在的路径，可直接输入:./
+ */
+
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline').createInterface({
@@ -34,6 +38,7 @@ function renameFiles(dirPath, traverseSubfolders) {
     });
 }
 
+console.log("FileNameConverter可以将指定目录中的全部文件名称中的IMG_、VID_、mmexport字符去掉。\n如果使用脚本所在的路径，可直接输入:./");
 readline.question('请输入目录路径: ', (dirPath) => {
     fs.access(dirPath, fs.constants.F_OK, (err) => {
         if (err) {
